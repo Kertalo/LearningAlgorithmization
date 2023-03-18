@@ -25,8 +25,23 @@ export default class extends Controller {
     function draw_player()
     {
       ctx.beginPath();
-      ctx.arc(x * (side + cell / 2 + (position % width) * (cell + wall)),
-          x * (side + cell / 2 + Math.floor(position / width) * (cell + wall)),
+      let position_x = side + cell / 2 + (position % width) * (cell + wall);
+      let position_y = side + cell / 2 + Math.floor(position / width) * (cell + wall);
+
+      if (rotation % 2 === 0)
+        ctx.rect(x * (position_x - player_length / 2),
+            x * (rotation === 0 ? position_y - player_length * 1.3 : position_y),
+            x * player_length, x * player_length * 1.3);
+      else
+        ctx.rect(x * (rotation === 3 ? position_x - player_length * 1.3 : position_x),
+            x * (position_y - player_length / 2),
+            x * player_length * 1.3, x * player_length);
+      ctx.fillStyle = "#000000";
+      ctx.fill();
+      ctx.closePath();
+
+      ctx.beginPath();
+      ctx.arc(x * position_x, x * position_y,
           x * player_length, 0, 2 * Math.PI, false);
       ctx.fillStyle = "#f5ff00";
       ctx.fill();
@@ -111,7 +126,7 @@ export default class extends Controller {
           .then(results => {
             if (results !== null) {
               update_level();
-              run_line();
+              setTimeout(() => { run_line(); }, 500);
             }})
     }
 
@@ -132,7 +147,7 @@ export default class extends Controller {
           if (results === 0)
           {
             update_level();
-            run_line();
+            setTimeout(() => { run_line(); }, 500);
           }
           else
             alert("mistake on " + results + " line");

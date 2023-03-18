@@ -3,7 +3,7 @@ require 'json'
 class LevelsController < ApplicationController
 
   $level = 0
-  $widths = [4, 8, 8]
+  $widths = [8, 8, 8]
   $heights = [8, 8, 8]
   $positions = [8, 35, 23]
   $rotations = [2, 0, 3]
