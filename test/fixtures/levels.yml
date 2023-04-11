@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  level: 1
+  width: 1
+  height: 1
+  position: 1
+  rotation: 1
+
+two:
+  level: 1
+  width: 1
+  height: 1
+  position: 1
+  rotation: 1

@@ -2,44 +2,69 @@ require 'json'
 
 class LevelsController < ApplicationController
 
-  $level = 0
-  $widths = [8, 8, 8]
-  $heights = [8, 8, 8]
-  $positions = [8, 35, 23]
-  $rotations = [2, 0, 3]
-  $end_positions = [5, 24, 1]
-  $now_values = []
+  @@id = 0
+
+  $width = 0
+  $height = 0
+  $start = 0
+  $end = 0
+  $rotation = 0
+  $labyrinth = []
+  $blocks = []
+
   $code = []
   $is_run = false
 
-  def main
-
+  def index
+    @level = Level.all
   end
 
   def levels
 
   end
 
-  def level1
-
+  def update_values
+    @level = Level.find(@@id)
+    $width = @level.width
+    $height = @level.height
+    $start = @level.start
+    $end = @level.end
+    $rotation = @level.rotation
+    $labyrinth = JSON.parse(@level.labyrinth)
+    $blocks = JSON.parse(@level.blocks)
   end
 
-  def update_values
-    $now_values = [ $widths[$level], $heights[$level], $positions[$level], $rotations[$level], $end_positions[$level] ]
+  def find_new_position(position)
+    if $rotation % 2 == 0
+      if $rotation == 0
+        position -= position / $width == 0 ? 0 : $width
+      else
+        position += position / $width == $height - 1 ? 0 : $width
+      end
+    else
+      if $rotation == 1
+        position += position % $width == $width - 1 ? 0 : 1
+      else
+        position -= position % $width == 0 ? 0 : 1
+      end
+    end
+    position
   end
 
   def forward
-    if $now_values[3] % 2 == 0
-      if $now_values[3] == 0
-        $now_values[2] -= $now_values[2] / $now_values[0] == 0 ? 0 : $now_values[0]
+    new_position = find_new_position($start)
+
+    if $labyrinth.include? new_position
+      if $blocks.include? new_position
+        block_new_position = find_new_position(new_position)
+        if block_new_position != new_position and $labyrinth.include? block_new_position
+          block_index = $blocks.find_index new_position
+          puts block_index
+          $blocks[block_index] = block_new_position
+          $start = new_position
+        end
       else
-        $now_values[2] += $now_values[2] / $now_values[0] == $now_values[1] - 1 ? 0 : $now_values[0]
-      end
-    else
-      if $now_values[3] == 1
-        $now_values[2] += $now_values[2] % $now_values[0] == $now_values[0] - 1 ? 0 : 1
-      else
-        $now_values[2] -= $now_values[2] % $now_values[0] == 0 ? 0 : 1
+         $start = new_position
       end
     end
   end
@@ -54,10 +79,10 @@ class LevelsController < ApplicationController
       forward
       $code = $code[1..$code.length-1]
     when 0 then #leftRotate
-      $now_values[3] = ($now_values[3] + 3) % 4
+      $rotation = ($rotation + 3) % 4
       $code = $code[1..$code.length-1]
     when 1 then #rightRotate
-      $now_values[3] = ($now_values[3] + 1) % 4
+      $rotation = ($rotation + 1) % 4
       $code = $code[1..$code.length-1]
     else
       $is_run = false
@@ -105,9 +130,26 @@ class LevelsController < ApplicationController
   end
 
   def update_level
-    if $now_values == []
-      update_values
-    end
-    render json: $now_values
+    #if $now_values == []
+    #  update_values
+    #end
+    result = [$width, $height, $start, $end, $rotation, $labyrinth, $blocks]
+    render json: result
+  end
+
+  def show
+    @level = Level.find(params[:id])
+    @@id = params[:id]
+    update_values
+  end
+
+  def create
+    @level = Level.new(level_params)
+    @level.save
+    redirect_to @level
+  end
+
+  private def level_params
+    params.require(:level).permit(:width, :height, :start, :end, :rotation, :labyrinth, :blocks)
   end
 end

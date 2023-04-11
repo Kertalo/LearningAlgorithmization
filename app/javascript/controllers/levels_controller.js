@@ -10,11 +10,12 @@ export default class extends Controller {
     let x = 0;
 
     let player_length = 3.0;
-    let end_length = 5.0;
+    let block_length = 5.0;
+    let end_length = 4.0;
 
     let cell = 10.0;
-    let side = 3.0;
-    let wall = 2.0;
+    //let side = 3.0;
+    //let wall = 2.0;
 
     let width;
     let height;
@@ -22,11 +23,16 @@ export default class extends Controller {
     let rotation;
     let end;
 
+    let labyrinth = [];
+    let blocks = [];
+
+    let field = [1, 2, 3, 4, 5];
+
     function draw_player()
     {
       ctx.beginPath();
-      let position_x = side + cell / 2 + (position % width) * (cell + wall);
-      let position_y = side + cell / 2 + Math.floor(position / width) * (cell + wall);
+      let position_x = cell / 2 + (position % width) * cell;
+      let position_y = cell / 2 + Math.floor(position / width) * cell;
 
       if (rotation % 2 === 0)
         ctx.rect(x * (position_x - player_length / 2),
@@ -51,29 +57,10 @@ export default class extends Controller {
     function draw_object(pos, length, color)
     {
       ctx.beginPath();
-      ctx.rect(x * (side + cell / 2 + (pos % width) * (cell + wall) - length / 2),
-          x * (side + cell / 2 + Math.floor(pos / width) * (cell + wall) - length / 2),
+      ctx.rect(x * (cell / 2 + (pos % width) * cell - length / 2),
+          x * (cell / 2 + Math.floor(pos / width) * cell - length / 2),
           x * length, x * length);
       ctx.fillStyle = color;
-      ctx.fill();
-      ctx.closePath();
-    }
-
-    function draw_wall(is_vertical, i)
-    {
-      if ((is_vertical && i % width === width - 1) || (!is_vertical && Math.floor(i / width) >= height - 1))
-        return;
-
-      ctx.beginPath();
-      if (is_vertical)
-        ctx.rect(x * (side - wall + (i % width + 1) * (cell + wall)),
-          x * (side - wall / 2 + Math.floor(i / width) * (cell + wall)),
-          x * wall, x * (cell + wall));
-      else
-        ctx.rect(x * (side - wall / 2 + (i % width) * (cell + wall)),
-            x * (side - wall + Math.floor(i / width + 1) * (cell + wall)),
-            x * (cell + wall), x * wall);
-      ctx.fillStyle = "rgba(175,175,175,0.37)";
       ctx.fill();
       ctx.closePath();
     }
@@ -81,53 +68,53 @@ export default class extends Controller {
     function update()
     {
       if (width <= height)
-        x = canvasLength / (2 * side - wall + (wall + cell) * height)
+        x = canvasLength / (cell * height)
       else
-        x = canvasLength / (2 * side - wall + (wall + cell) * width)
+        x = canvasLength / (cell * width)
 
-      ctx.beginPath();
+      /*ctx.beginPath();
       //ctx.clearRect(0, 0, canvasLength, canvasLength);
-      ctx.rect(0, 0, x * (2 * side + width * (cell + wall) - wall), x * (2 * side + height * (cell + wall) - wall));
+      ctx.rect(0, 0, x * width * cell, x * height * cell);
       ctx.fillStyle = "#5cb6b6";
       ctx.fill();
-      ctx.closePath();
+      ctx.closePath();*/
 
-      for(let i = 0; i < width * height; i++)
-      {
-        draw_wall(true, i);
-        draw_wall(false, i);
-      }
+      for(let i = 0; i < labyrinth.length; i++)
+        draw_object(labyrinth[i], cell, "#5cb6b6");
 
-      draw_object(end, end_length, "#000000");
+      for(let i = 0; i < blocks.length; i++)
+        draw_object(blocks[i], block_length, "#000000");
+
+      draw_object(end, end_length, "#ffffff");
       draw_player();
 
-      ctx.beginPath();
+      /*ctx.beginPath();
       ctx.rect(0, 0, x * (2 * side + width * (cell + wall) - wall), side * x);
       ctx.rect(0, 0, side * x, x * (2 * side + height * (cell + wall) - wall));
       ctx.rect(0, x * (side + height * (cell + wall) - wall), x * (2 * side + width * (cell + wall) - wall), side * x);
       ctx.rect(x * (side + width * (cell + wall) - wall), 0, side * x, x * (2 * side + height * (cell + wall) - wall));
       ctx.fillStyle = "#ffffff";
       ctx.fill();
-      ctx.closePath();
+      ctx.closePath();*/
     }
 
     async function update_level()
     {
       await fetch('/update_level')
-          .then(response => response.json())
-          .then(results => { width = results[0]; height = results[1];
-            position = results[2]; rotation = results[3]; end = results[4]; update(); });
+        .then(response => response.json())
+        .then(results => { width = results[0]; height = results[1]; position = results[2]; end = results[3];
+          rotation = results[4]; labyrinth = results[5]; blocks = results[6]; update(); });
     }
 
     async function run_line()
     {
       await fetch('/run_line')
-          .then(response => response.json())
-          .then(results => {
-            if (results !== null) {
-              update_level();
-              setTimeout(() => { run_line(); }, 500);
-            }})
+        .then(response => response.json())
+        .then(results => {
+          if (results !== null) {
+            update_level();
+            setTimeout(() => { run_line(); }, 500);
+          }})
     }
 
     async function assert_program()
@@ -158,6 +145,24 @@ export default class extends Controller {
     const button_run = document.getElementById("run");
     button_run.addEventListener('click', (event) => assert_program());
 
+    //save_labyrinth().then(r => r);
+
     update_level().then(r => r);
+
+    /*async function save_labyrinth()
+    {
+      let labyrinth = { field: field };
+
+      const token = document.querySelector('meta[name="csrf-token"]').content;
+
+      await fetch('/save_labyrinth', {
+        method: 'POST',
+        headers: {
+          "X-CSRF-Token": token,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(labyrinth)
+      });
+    }*/
   }
 }

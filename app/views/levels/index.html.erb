@@ -1,0 +1,4 @@
+Levels
+<% @level.each do |level| %>
+  <%= button_to level.id, level_path(level), method: :get%>
+<% end %>
